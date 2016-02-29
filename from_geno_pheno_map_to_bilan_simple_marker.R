@@ -44,7 +44,8 @@ geno <- read.table(fic_geno, sep = ";" , header = F, na.strings = "-")
 geno=as.matrix(geno)
 colnames(geno)=geno[1,]
 geno=as.data.frame(geno[-1 , ])
-
+print("--- Your genotyping matrix looks correct. Dimension of the matrix are :")
+print(dim(geno))
 
 # --- Carte 
 # Format de la carte : 3 colonnes : LG, nom du marqueur, position dans le LG
@@ -52,11 +53,14 @@ map <- read.table(fic_map , header=T , dec = ".", na.strings = "-" , check.names
 colnames(map) <- c("LG", "marqueur", "Distance","group_physique","Posi_physique")
 rownames(map) <- map$marqueur
 map$LG <- as.factor(map$LG)
-
+print("--- Your genetic map looks correct. Dimension of the map are :")
+print(dim(map))
 
 # --- Phénotypage
 Y=read.table(file = fic_pheno, header = TRUE, sep = ";", dec = ".", na.strings = "NA")
 colnames(Y)[1]="geno"
+print("--- Your Phenotyping matrix looks correct. Dimension of the matrix are :")
+print(dim(Y))
 
 
 
@@ -87,9 +91,11 @@ print(verif)
 
 #Fonction SIM : pour un marqueur et un caractere : retourne pvalue, R2 moyenne etc..
 sim <- function(x, y) {
+  print(x)
   modele <- lm(y ~ x)
   variance <- anova(modele)
   moy <- aggregate(y, by = list(marqueur = x), mean, na.rm = TRUE)
+  print("ok")
   resu <- c(variance$"Pr(>F)"[1], variance$"Sum Sq"[1]/(variance$"Sum Sq"[1] + variance$"Sum Sq"[2]), moy$x[moy$marqueur == "A"], moy$x[moy$marqueur =="B"], abs(moy[1, 2] - moy[2, 2])/2)
   names(resu) <- c("pvalue", "R2", "moy.A", "moy.B", "a")
   return(resu)
@@ -114,16 +120,6 @@ simple_marker_analysis=function(colonne){
   res <- as.data.frame(res2)
   res$LOD=-log10(res$pvalue)
   return(res)
-}
-
-#Fonction treeshold_results pour obtenir la liste des marqueurs supérieurs au treeshold précisé
-treeshold_results=function(res,LOD_seuil=4){	
-  #on récupère les marqueurs ayant un effet significatif : LOD > 4
-  msignif <- res[res$LOD >= LOD_seuil, ]
-  msignif[,7]=row.names(msignif)
-  map_signif=map[map[,2] %in% rownames(msignif), ]
-  final=merge(map_signif, msignif , by.x=2 , by.y=7 , all=T)
-  return(final)
 }
 
 
