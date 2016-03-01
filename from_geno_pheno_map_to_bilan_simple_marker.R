@@ -75,7 +75,7 @@ print(dim(Y))
 
 
 # Vérification des données pour voir si tout va bien
-verif=as.data.frame(matrix(0,6,2)) ; verif[,1]=c("nbr de geno dans la map" , "nbr geno dans fichier de génot" , "nbr indiv dans fichier de génot" , "nbr d'indiv dans fic phénot" , "nbr geno communs carte / genotypage","nbr indiv communs genot / phenot")
+verif=as.data.frame(matrix(0,6,2)) ; verif[,1]=c("number of markers in the map" , "number of markers in the genotyping matrix" , "nbr indiv dans fichier de génot" , "nbr d'indiv dans fic phénot" , "nbr geno communs carte / genotypage","nbr indiv communs genot / phenot")
 verif[1,2]=nrow(map) ; verif[2,2]=ncol(geno)-1 ; verif[3,2]=nrow(geno) ; verif[4,2]=nrow(Y) ; verif[5,2]=length(colnames(geno)[colnames(geno)%in%map$marqueur==TRUE])  ; verif[6,2]=length(Y[,1][ Y[,1]%in%geno[,1]==TRUE])
 print(verif)
 
