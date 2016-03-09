@@ -159,6 +159,8 @@ shinyServer(function(input, output) {
         for (carac in input$to_check){
           num=num+1
           res=bilan_simple_marker()
+          #On va garder les lignes de res pour lesquels on a bien un LOD (ls SNP est génotypé pour la pop)
+          res=res[!is.na(res$pvalue) , ]          
           #On prend seulement les résultats correspondant à la variable en question et au chromosome en question
           res=res[res$variable== carac & res$LG == chromo, ]
           #Si l'option physique est cochée, je dois prendre les positions en pb :
@@ -184,6 +186,8 @@ shinyServer(function(input, output) {
     data=bilan_simple_marker()
     data=data[data$variable%in%as.factor(input$to_check) , ]
     data=data[data$LG==input$chromo , ]
+    #On va garder les lignes de res pour lesquels on a bien un LOD (ls SNP est génotypé pour la pop)
+    data=data[!is.na(data$pvalue) , ]          
     fun=function(x){return(length(x[x=="A" & !is.na(x) ]) )} ; fun2=function(x){return(length(x[x=="B" & !is.na(x) ]) )} ; fun3=function(x){return(length(x[ is.na(x) ]) )}
     tmp=apply(geno()[,-1] , 2 , fun) ; tmp2=apply(geno()[,-1] , 2 , fun2) ; tmp3=apply(geno()[,-1] , 2 , fun3)
     tmp=data.frame(SNP=names(tmp), nb_A=tmp , nb_B=tmp2 , nb_NA=tmp3 ) 	
@@ -192,9 +196,15 @@ shinyServer(function(input, output) {
     data=data[order(data$Distance) , ]
     my_text=paste(data$marqueur , "\n" , "Allele A : ",round(data$moy.A,2) , " | nb :", data$nb_A , "\nAllele B : ", round(data$moy.B,2) , " | nb :", data$nb_B , "\nMissing data : ", data$nb_NA , sep="" )    
     print(head(data))
-    output$chromo_zoom <- renderPlotly({ plot_ly(data , y=LOD , x=Distance , group=variable , hoverinfo="name+text+x" , text=my_text) %>%  layout( xaxis = list( title="" )  , annotations = list(x = 10, y = 9, text = input$chromo, showarrow = F ,font=list(color="orange") )   )   }) 
+    output$chromo_zoom <- renderPlotly({ 
+    	plot_ly(data , y=LOD , x=Distance , group=variable , hoverinfo="name+text+x" , text=my_text) %>%  
+    	layout( 
+    		xaxis = list( title="" ) , 
+    		annotations = list(x = 10, y = 9, text = input$chromo, showarrow = F ,font=list(color="orange") ) 
+    		)   
+    	}) 
     
-    
+
     
        
     
