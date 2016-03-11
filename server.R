@@ -194,7 +194,7 @@ shinyServer(function(input, output) {
     data=merge(data,tmp,by.x=2 , by.y=1 , all.x=T)
     if (input$Distance == "physical"){ data$Distance <- data$Posi_physique  ; data=data[data$LG==data$group_physique , ]  }	
     data=data[order(data$Distance) , ]
-    my_text=paste(data$marqueur , "\n" , "Allele A : ",round(data$moy.A,2) , " | nb :", data$nb_A , "\nAllele B : ", round(data$moy.B,2) , " | nb :", data$nb_B , "\nMissing data : ", data$nb_NA , sep="" )    
+    my_text=paste(data$marqueur , "\n" , "Allele A : ",round(data$moy.A,2) , " | nb :", data$nb_A , "\nAllele B : ", round(data$moy.B,2) , " | nb :", data$nb_B , "\nMissing data : ", data$nb_NA , "\nr2 : ",  round(data$R2,2) , sep="" )    
     print(head(data))
     output$chromo_zoom <- renderPlotly({ 
     	plot_ly(data , y=LOD , x=Distance , group=variable , hoverinfo="name+text+x" , text=my_text) %>%  
