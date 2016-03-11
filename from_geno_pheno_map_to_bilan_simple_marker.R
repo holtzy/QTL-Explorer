@@ -131,9 +131,13 @@ simple_marker_analysis=function(colonne){
 # PARTIE 4 : CALCUL DU BILAN_SIMPLE_MARKER
 # -------------------------------------------------
 to_check=names(Y)[sapply(Y,is.numeric)==TRUE]
+print("les variables a analyser sont : ")
+print(to_check)
 
 bilan_simple_marker=data.frame()
+print("variables faites : ")
 for (i in to_check){
+  print(i)
   a=simple_marker_analysis(which(colnames(Y) == i))
   a$marker=rownames(a)
   a=merge(map,a , by.x=2 , by.y=c("marker") , all.x=T )
