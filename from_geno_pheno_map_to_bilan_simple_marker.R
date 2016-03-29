@@ -95,7 +95,6 @@ sim <- function(x, y) {
   modele <- lm(y ~ x)
   variance <- anova(modele)
   moy <- aggregate(y, by = list(marqueur = x), mean, na.rm = TRUE)
-  print("ok")
   resu <- c(variance$"Pr(>F)"[1], variance$"Sum Sq"[1]/(variance$"Sum Sq"[1] + variance$"Sum Sq"[2]), moy$x[moy$marqueur == "A"], moy$x[moy$marqueur =="B"], abs(moy[1, 2] - moy[2, 2])/2)
   names(resu) <- c("pvalue", "R2", "moy.A", "moy.B", "a")
   return(resu)
