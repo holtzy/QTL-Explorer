@@ -91,7 +91,6 @@ print(verif)
 
 #Fonction SIM : pour un marqueur et un caractere : retourne pvalue, R2 moyenne etc..
 sim <- function(x, y) {
-  print(x)
   modele <- lm(y ~ x)
   variance <- anova(modele)
   moy <- aggregate(y, by = list(marqueur = x), mean, na.rm = TRUE)
