@@ -194,6 +194,7 @@ run_my_QTLREL=function(select){
 	bilan$LOD=-log10(bilan$pvalue)
 	#Ajout Variable
 	bilan$variable=colnames(Y)[select]
+	bilan=bilan[ , c(2,1,3:ncol(bilan))]
 	
 	#Nom des colonnes
 	colnames(bilan)=c("LG","marqueur","Distance","group_physique","Posi_physique","pvalue","R2","moy.A","moy.B","a","LOD","variable")
