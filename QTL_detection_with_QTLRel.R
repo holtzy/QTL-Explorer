@@ -21,22 +21,20 @@
 	
 
 # -- Récupération des Arguments
-#args <- commandArgs(trailingOnly = TRUE)
-#fic_geno=args[1]
-#fic_pheno=args[2] 
-#fic_map=args[3]
+args <- commandArgs(trailingOnly = TRUE)
+fic_geno=args[1]
+fic_pheno=args[2] 
+fic_map=args[3]
 
-fic_geno="/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_BYBLOS/CAPTURE_ALL_INDIV_7_2_2015/MAPPING_ON_EPO/IMPUTATION/fichier_genotypage_QTL.csv"
-fic_pheno="/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_BYBLOS/CAPTURE_ALL_INDIV_7_2_2015/PHENOTYPAGE/bilan_pheno_Dic2_Byblos.csv"
-fic_map="/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/CARTOGRAPHIE_GENETIQUE/5_CARTE_DB/map_avec_posi_physique.txt"
-chromo="1A"
+#setwd("/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_SILUR/QTL/PUBLI")
+#fic_geno="genotypage.csv"
+#fic_pheno="phenotypage.csv"
+#fic_map="carte"
+
 
 # Package / libraries nécessaires :
-#library(devtools)
-#install_github("timflutre/rutilstimflutre") Attention, lme4 doit etre installé auparavant.
-#install.packages("QTLRel")
-#library(rutilstimflutre)
 library(QTLRel)
+set.seed(123)
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
@@ -74,6 +72,7 @@ Y=read.table(file = fic_pheno, header = TRUE, sep = ";", dec = ".", na.strings =
 colnames(Y)[1]="geno"
 print("--- Your Phenotyping matrix looks correct. Dimension of the matrix are :")
 print(dim(Y))
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
 
@@ -99,23 +98,18 @@ print(verif)
 
 
 
-
-
-
-
-
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 # -------------------------------------------------
-# PARTIE 3 : CHANGEMENT FORMAT POUR QTLREL + CREATION DE FICHIER
+# PARTIE 3 : CHANGEMENT FORMAT POUR QTLREL
 # -------------------------------------------------
 
-#Geno
+# --- Geno
 rownames(geno)=geno[,1] ; geno=geno[,-1] ; geno=as.matrix(geno)
 geno[which(geno=="A")]<-"AA"
 geno[which(geno=="B")]<-"BB"
 
-#On va remplacer les données manquantes par un allele au hasard.
+# On va remplacer les données manquantes par un allele au hasard.
 my_fun=function(x){length(x[x=="AA"])/length(!is.na(x)) }
 prop=apply(geno , 2 , my_fun)
 for(i in c(1:ncol(geno))){
@@ -124,27 +118,9 @@ for(i in c(1:ncol(geno))){
 	geno[,i][is.na(geno[,i])]=c("BB","AA")[bb+1]
 	}
 
-#Phéno
+# --- Phéno
 rownames(Y)=Y[,1] ; Y=Y[,-1]
 
-#Map
-map=map[ , c(2,1,3)]
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# -------------------------------------------------
-# PARTIE 3 : SELECTION PHENO + FABRICATION FICHIER CORESPONDANT
-# -------------------------------------------------
-
-
-# Il faut une matrice avec les memes indiv dans les matrices de phéno et de géno
-y=Y[,3] ; y=as.data.frame(y) ; rownames(y)=rownames(Y) ; y=na.omit(y)
-my_geno=geno[which(rownames(geno)%in%rownames(y)) , ]
-
-#Matrice identité
-I<-diag(nrow(y))
-
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
@@ -152,42 +128,100 @@ I<-diag(nrow(y))
 
 
 
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------
+# PARTIE 4 : FONCTION QUI FAIT TOURNER QTLREL SUR UNE VARIABLE PHENO
+# -------------------------------------------------
+
+
+run_my_QTLREL=function(select){
+
+	# ---- SELECTION PHENO + FABRICATION FICHIER CORESPONDANT
+	
+	# Il faut une matrice avec les memes indiv dans les matrices de phéno et de géno
+	y=Y[,select]
+	y=as.data.frame(y)
+	rownames(y)=rownames(Y)
+	y=na.omit(y)
+	my_geno=geno[which(rownames(geno)%in%rownames(y)) ,  which(colnames(geno)%in%map$marqueur)]
+	y=as.matrix(y)
+	y=as.data.frame(y[rownames(y)%in%rownames(geno) , ])
+	
+	#Idem pour la carte!
+	my_map=map[which(map$marqueur%in%colnames(my_geno)) , ]
+	
+	#Matrice identité
+	I<-diag(nrow(y))
+	
+	
+	# --- PASSAGE DE QTLREL
+	
+	# Calcul matrice apparentement IBS
+	K<-genMatrix(my_geno)
+	# On visualise la matrice K comme ceci (2=apparentement complet) :
+	#K$AA[1:10 , 1:10] ; hist(K$AA[1:10 , 1:10] , breaks=20)
+	
+	# le premier modele sert a calculer la variance
+	y=as.matrix(y)
+	mod1<-estVC(y=y,v=list(AA=K$AA,DD=NULL,HH=NULL,AD=NULL,MH=NULL,EE=I))
+	mod1
+	
+	# Genet assoc
+	GWAS.mod1<-scanOne(y=y,gdat=my_geno,vc=mod1,test="Chisq")
+	
+	
+	# Récupération des moyennes par alleles:
+	my_function=function(x, y) {
+		moy <- aggregate(y, by = list(marqueur = x), mean, na.rm = TRUE)
+		resu=data.frame(moy.A=moy$y[moy$marqueur == "AA"],moy.B= moy$y[moy$marqueur =="BB"] , a=abs(moy[1, 2] - moy[2, 2])/2)
+		return(resu)
+		}
+	my_mean = apply(my_geno, MARGIN = 2, FUN = function(x,y) my_function(x, y), y=y)
+	my_mean = matrix(as.vector(unlist(my_mean)) , ncol=3 , byrow=T)	
+	
+	
+	
+	# --- FORMATION TABLEAU BILAN
+	
+	#Récupération des pvalues + r2 expliqué.
+	bilan<-data.frame(marqueurs=colnames(my_geno),pvalue=GWAS.mod1$p, r2=GWAS.mod1$v)
+	#Ajout des moyennes
+	bilan=cbind(bilan,my_mean)
+	#Ajout des données de carto
+	bilan=merge(map,bilan,by.x=2,by.y=1,all=T)
+	#Ajout LOD
+	bilan$LOD=-log10(bilan$pvalue)
+	#Ajout Variable
+	bilan$variable=colnames(Y)[select]
+	
+	#Nom des colonnes
+	colnames(bilan)=c("LG","marqueur","Distance","group_physique","Posi_physique","pvalue","R2","moy.A","moy.B","a","LOD","variable")
+	return(bilan)
+	}
+
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # -------------------------------------------------
-# PARTIE 4 : PASSAGE DE QTLREL
+# PARTIE 4 : CALCUL DU BILAN_SIMPLE_MARKER EN UTILISANT LA FONCTION
 # -------------------------------------------------
+to_check=names(Y)[sapply(Y,is.numeric)==TRUE]
+print("les variables a analyser sont : ")
+print(to_check)
 
-# Calcul matrice apparentement IBS
-K<-genMatrix(my_geno)
-# On visualise la matrice K comme ceci :
-K$AA[1:10 , 1:10]
-hist(K$AA[1:10 , 1:10] , breaks=20)
-
-
-# le premier modele sert a calculer la variance
-toto=as.matrix(y)
-mod1<-estVC(y=toto,v=list(AA=K$AA,DD=NULL,HH=NULL,AD=NULL,MH=NULL,EE=I))
-mod1
-
-# Genet assoc
-GWAS.mod1<-scanOne(y=toto,gdat=my_geno,vc=mod1,test="Chisq")
-
-#Récupération des pvalues
-pval.mod1<-data.frame(marqueurs=colnames(my_geno),pvalue=GWAS.mod1$p)
-
-#Seuil de détection des LODs
-seuil.mod1<-3
-
-# Manhattan plot
-pval.mod1=merge(pval.mod1 , map , by.x=1 , by.y=2 , all=T)
-par(mfrow=c(4,4))
-for(i in levels(pval.mod1$LG)){
-	print(i)
-	dat=pval.mod1[pval.mod1$LG==i , ]
-	plot(-log10(dat$pvalue)~dat$Distance , ylim=c(0,5) )
-	abline(h=seuil.mod1,col="red")
+bilan_simple_marker=data.frame()
+print("variables faites : ")
+for (i in to_check){
+  print(i)
+  a=run_my_QTLREL(which(colnames(Y) == i))
+  bilan_simple_marker=rbind(bilan_simple_marker,a)
 }
 
+# écriture du bilan
+write.csv(x=bilan_simple_marker,file="bilan_simple_marker",row.names=F)
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
