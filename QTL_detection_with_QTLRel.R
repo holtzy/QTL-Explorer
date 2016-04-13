@@ -26,7 +26,7 @@ fic_geno=args[1]
 fic_pheno=args[2] 
 fic_map=args[3]
 
-#setwd("/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_SILUR/QTL/PUBLI")
+#setwd("/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_LLOYD/QTL/PUBLI")
 #fic_geno="genotypage.csv"
 #fic_pheno="phenotypage.csv"
 #fic_map="carte"
@@ -70,6 +70,7 @@ print(dim(map))
 # --- Phénotypage
 Y=read.table(file = fic_pheno, header = TRUE, sep = ";", dec = ".", na.strings = "NA")
 colnames(Y)[1]="geno"
+Y=Y[order(Y$geno) , ]
 print("--- Your Phenotyping matrix looks correct. Dimension of the matrix are :")
 print(dim(Y))
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -145,6 +146,7 @@ run_my_QTLREL=function(select){
 	rownames(y)=rownames(Y)
 	y=na.omit(y)
 	my_geno=geno[which(rownames(geno)%in%rownames(y)) ,  which(colnames(geno)%in%map$marqueur)]
+	my_geno=my_geno[order(rownames(my_geno)) , ]
 	y=as.matrix(y)
 	y=as.data.frame(y[rownames(y)%in%rownames(geno) , ])
 	
