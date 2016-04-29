@@ -37,7 +37,7 @@ shinyServer(function(input, output) {
 
   # fichier de phénotypage 
   Y<- reactive({
-    file_path=paste("../",input$Experiment,"/phenotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/phenotypage.csv",sep="")
       Y=read.table(file = file_path , header = TRUE, sep = ";", dec = ".", na.strings = "NA")
       colnames(Y)[1]="geno"
       return (Y)
@@ -45,7 +45,7 @@ shinyServer(function(input, output) {
   
   # fichier comprenant les calculs
   bilan_simple_marker <- reactive ({
-    file_path=paste("../",input$Experiment,"/bilan_simple_marker",sep="")
+    file_path=paste(input$Experiment,"/bilan_simple_marker",sep="")
     bilan_simple_marker <- read.csv(file=file_path)
     bilan_simple_marker=bilan_simple_marker[ order(bilan_simple_marker$LG,bilan_simple_marker$Distance) , ]
     return(bilan_simple_marker)
@@ -53,7 +53,7 @@ shinyServer(function(input, output) {
 
   # fichier avec tous les génotypes
   geno <- reactive({
-    file_path=paste("../",input$Experiment,"/genotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/genotypage.csv",sep="")
     geno <- read.table(file=file_path, sep = ";" , header = F, na.strings = "-")
     geno=as.matrix(geno)
     colnames(geno)=geno[1,]
@@ -63,7 +63,7 @@ shinyServer(function(input, output) {
   
   # la carte génétique (position en cM et physical)
   map <- reactive({
-    file_path=paste("../",input$Experiment,"/carte",sep="")
+    file_path=paste(input$Experiment,"/carte",sep="")
     map <- read.table(file=file_path , header=T , dec = ".", na.strings = "-" , check.names=F)
     colnames(map) <- c("LG", "marqueur", "Distance","group_Americain","Posi_physique")
     rownames(map) <- map$marqueur
@@ -74,7 +74,7 @@ shinyServer(function(input, output) {
   
   # le fichier d'expression(si il existe)
   expre <- reactive({
-    file_path=paste("../",input$Experiment,"/expression",sep="")
+    file_path=paste(input$Experiment,"/expression",sep="")
     if (file.exists(file_path)) {
       expre<-read.table(file=file_path,header=T,dec=".")
     }
@@ -108,7 +108,7 @@ shinyServer(function(input, output) {
     }
       
     # Sélection de toutes les variables numériques
-    file_path=paste("../",input$Experiment,"/phenotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/phenotypage.csv",sep="")
     Y=read.table(file = file_path , header = TRUE, sep = ";", dec = ".", na.strings = "NA")
     colnames(Y)[1]="geno"
     colnames <- names(Y[sapply(Y,is.numeric)==TRUE])
@@ -128,7 +128,7 @@ shinyServer(function(input, output) {
     }
       
     # Sélection de toutes les variables numériques
-    file_path=paste("../",input$Experiment,"/carte",sep="")
+    file_path=paste(input$Experiment,"/carte",sep="")
     map <- read.table(file=file_path , header=T , dec = ".", na.strings = "-" , check.names=F)
     colnames(map) <- c("LG", "marqueur", "Distance","group_Americain","Posi_physique")
     chromo_avail=levels(map$LG)

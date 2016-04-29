@@ -32,7 +32,7 @@ shinyUI(fluidPage(
       br(""),
 
       # CHOIX DU FICHIER DE PHENOTYPAGE
-      textInput("Experiment",label = "Name of the working directory: " , value="DATA_DS_FUSA"),
+      textInput("Experiment",label = "Name of the working directory: " , value="Example_Dataset"),
       submitButton("Submit"),
       selectInput("Distance",label = "Physical or genetic positions for markers ?", choices = c("cM","physical")),
 
