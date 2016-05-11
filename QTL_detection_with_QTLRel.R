@@ -26,7 +26,7 @@ fic_geno=args[1]
 fic_pheno=args[2] 
 fic_map=args[3]
 
-#setwd("/NAS/davem_data/EPO/SAUVEGARDE_DATA_YAN/DIC2_LLOYD/QTL/PUBLI")
+#setwd("/NAS/g2pop/HOLTZ_YAN_DATA/PESCADOU_SOLDUR/MANIP_BAIT_3_JAN16/MAPPING_ON_EPO/QTL")
 #fic_geno="genotypage.csv"
 #fic_pheno="phenotypage.csv"
 #fic_map="carte"
@@ -107,17 +107,18 @@ print(verif)
 
 # --- Geno
 rownames(geno)=geno[,1] ; geno=geno[,-1] ; geno=as.matrix(geno)
-geno[which(geno=="A")]<-"AA"
-geno[which(geno=="B")]<-"BB"
+geno[which(geno=="A")]<-1
+geno[which(geno=="B")]<-3
 
 # On va remplacer les données manquantes par un allele au hasard.
-my_fun=function(x){length(x[x=="AA"])/length(!is.na(x)) }
+my_fun=function(x){length(x[x==1])/length(!is.na(x)) }
 prop=apply(geno , 2 , my_fun)
 for(i in c(1:ncol(geno))){
 	aa=geno[,i][is.na(geno[,i])]
 	bb=rbinom(length(aa),1,prob=prop[i])
-	geno[,i][is.na(geno[,i])]=c("BB","AA")[bb+1]
+	geno[,i][is.na(geno[,i])]=c("3","1")[bb+1]
 	}
+
 
 # --- Phéno
 rownames(Y)=Y[,1] ; Y=Y[,-1]
@@ -150,6 +151,15 @@ run_my_QTLREL=function(select){
 	y=as.matrix(y)
 	y=as.data.frame(y[rownames(y)%in%rownames(geno) , ])
 	
+	
+	
+	#test
+	my_geno=my_geno[ , c(1,2221)]
+	my_geno=matrix(as.numeric(unlist(my_geno)),nrow=nrow(my_geno))
+	
+	
+	
+	
 	#Idem pour la carte!
 	my_map=map[which(map$marqueur%in%colnames(my_geno)) , ]
 	
@@ -160,18 +170,18 @@ run_my_QTLREL=function(select){
 	# --- PASSAGE DE QTLREL
 	
 	# Calcul matrice apparentement IBS
-	K<-genMatrix(my_geno)
+	K<-genMatrix(my_geno[ , 1:100] )
 	# On visualise la matrice K comme ceci (2=apparentement complet) :
-	#K$AA[1:10 , 1:10] ; hist(K$AA[1:10 , 1:10] , breaks=20)
+	#K$AA[1:10 , 1:10] ; hist(K$AA , breaks=20)
 	
 	# le premier modele sert a calculer la variance
 	y=as.matrix(y)
-	mod1<-estVC(y=y,v=list(AA=K$AA,DD=NULL,HH=NULL,AD=NULL,MH=NULL,EE=I))
+	mod1<-estVC(y=y,v=list(AA=NULL,DD=NULL,HH=NULL,AD=NULL,MH=NULL,EE=I))
 	mod1
 	
 	# Genet assoc
-	GWAS.mod1<-scanOne(y=y,gdat=my_geno,vc=mod1,test="Chisq")
-	
+	GWAS.mod1<-scanOne(y=y,gdat=my_geno,vc=mod1,test="F")
+	GWAS.mod1$p
 	
 	# Récupération des moyennes par alleles:
 	my_function=function(x, y) {
@@ -206,6 +216,11 @@ run_my_QTLREL=function(select){
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
+#bilan[bilan$marqueur=="Cluster_9678|Contig2|original@913" , ]
+#EE=I
+bilan[!is.na(bilan$LOD) , ]
+K$AA
+mod1
 
 
 
