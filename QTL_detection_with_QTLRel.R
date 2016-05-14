@@ -27,9 +27,7 @@ fic_pheno=args[2]
 fic_map=args[3]
 
 #setwd("/NAS/g2pop/HOLTZ_YAN_DATA/DIC2_SILUR/QTL/PUBLI")
-#fic_geno="genotypage.csv"
-#fic_pheno="phenotypage.csv"
-#fic_map="carte"
+#fic_geno="genotypage.csv" ; fic_pheno="phenotypage.csv" ; fic_map="carte"
 
 
 # Package / libraries nécessaires :
@@ -40,29 +38,6 @@ set.seed(123)
 
 
 
-
-
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-
-# -------------------------------------------------
-# FONCTIONS PRELIMINAIRES
-# -------------------------------------------------
-
-# tirage : cette fonction remplace les données manquantes par un tirage binomial , paramètre moyenne de l'échantillon 
-tirage<-function(x) {
-  x<-as.numeric(x)
-  manq<-which(is.na(x))
-  x2<-x[-manq]
-  freq<-sum(x2) / (2 * length(x2))
-  if (length(manq)>0) {
-    for (i in 1:length(manq)) {
-      ## tire un 0 avec la proba de 1 - freq.allelique et un 2 avec la proba freq.allelique
-      x[manq[i]]<-sample(x=c(0,2),1,prob=c((1-freq),freq))
-    }
-  }
-  return(x)
-}
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 
 
@@ -97,6 +72,7 @@ print(dim(map))
 
 # --- Phénotypage
 BLUP<-read.table(fic_pheno, header = TRUE, sep=";")
+colnames(BLUP)[1]="geno"
 print("--- Your Phenotyping matrix looks correct. Dimension of the matrix are :")
 print(dim(BLUP))
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -141,20 +117,20 @@ run_my_QTLREL=function(select){
 	# Et X va etre ma matrice de génotypage avec données manquantes:
 	X<-don2[,(ncol(BLUP)+1):ncol(don2)]
 	
-	# La fonction de Kinship ne traite pas les données manquantes. 
-	# On utilise d’abord un remplacement des données manquantes par un tirage aléatoire dans les moyennes pour calculer la matrice de Kinship.
-	# Il faut transformer les données de A en 1, B en 0 et - en NA pour faire ce remplacement:
-	XNNA<-X
-	XNNA<-apply(XNNA,MARGIN=2,as.character)
-	XNNA[XNNA=="A"]<-1
-	XNNA[XNNA=="B"]<-0
-	XNNA[XNNA=="-"]<-NA
-	XNNA<-apply(XNNA,MARGIN=2,FUN=tirage)
+	# Je vais remplacer les trous par des A et des B au hasard. Pour choisir l'un ou l'autre je vais choisir en faisant une binomiale avec comme proba la fréquence.
+	XNNA=X
+	my_fun=function(x){length(x[x=="A" & !is.na(x) ])/length(!is.na(x)) }
+	prop=apply(XNNA , 2 , my_fun)
+	for(i in c(1:ncol(XNNA))){
+ 		aa=XNNA[,i][is.na(XNNA[,i])]
+ 		bb=rbinom(length(aa),1,prob=prop[i])
+		XNNA[,i][is.na(XNNA[,i])]=c("B","A")[bb+1]
+ 		}
 	
-	# Et je remplace par des "AA", "AB" et "BB".
-	XNNA[which(XNNA==0)]<-"AA"
-	XNNA[which(XNNA==1)]<-"AB"
-	XNNA[which(XNNA==2)]<-"BB"
+	# Et je remplace par les "A" et "B" par des "AA" "BB" pour QTLREL
+	XNNA=as.matrix(XNNA)
+	XNNA[which(XNNA=="A")]<-"AA"
+	XNNA[which(XNNA=="B")]<-"BB"
 	
 	# Maintenant je peux calculer ma matrice de Kinship:
 	K<-genMatrix(XNNA)
