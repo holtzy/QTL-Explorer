@@ -44,7 +44,7 @@ shinyUI(fluidPage(
       sliderInput("LOD_seuil", label = h3("LOD threshold printed on plots ?"), min = 2, max = 7, value = 4,step = 0.1),
 
 	  # CHOIX D UN MARQUEUR
-	  textInput("selected_marker", "marker to study ?" , value="Traes_7BS_62A8A6F7E@944"),
+	  textInput("selected_marker", "marker to study ?" , value="Cluster_7926|Contig2|original@988"),
 
       # CHOIX DES CARACTERES
       uiOutput("choose_carac")
