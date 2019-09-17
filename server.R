@@ -28,16 +28,16 @@ shinyServer(function(input, output) {
   # --- to_check = liste avec les variables séléctionnés
   # --- Experiment = FUSA ou Mosaique
 
-  
-  
-  
+
+
+
 # --------------------------------------------------------------------------------
 # 	PARTIE 1 : CHARGEMENT DU FICHIERS SELON LE REPERTOIRE INDIQUE
 #--------------------------------------------------------------------------------
 
   # fichier de phénotypage 
   Y<- reactive({
-    file_path=paste("../",input$Experiment,"/phenotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/phenotypage.csv",sep="")
       Y=read.table(file = file_path , header = TRUE, sep = ";", dec = ".", na.strings = "NA")
       colnames(Y)[1]="geno"
       return (Y)
@@ -45,7 +45,7 @@ shinyServer(function(input, output) {
   
   # fichier comprenant les calculs
   bilan_simple_marker <- reactive ({
-    file_path=paste("../",input$Experiment,"/bilan_simple_marker",sep="")
+    file_path=paste(input$Experiment,"/bilan_simple_marker",sep="")
     bilan_simple_marker <- read.csv(file=file_path)
     bilan_simple_marker=bilan_simple_marker[ order(bilan_simple_marker$LG,bilan_simple_marker$Distance) , ]
     return(bilan_simple_marker)
@@ -53,7 +53,7 @@ shinyServer(function(input, output) {
 
   # fichier avec tous les génotypes
   geno <- reactive({
-    file_path=paste("../",input$Experiment,"/genotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/genotypage.csv",sep="")
     geno <- read.table(file=file_path, sep = ";" , header = F, na.strings = "-")
     geno=as.matrix(geno)
     colnames(geno)=geno[1,]
@@ -63,7 +63,7 @@ shinyServer(function(input, output) {
   
   # la carte génétique (position en cM et physical)
   map <- reactive({
-    file_path=paste("../",input$Experiment,"/carte",sep="")
+    file_path=paste(input$Experiment,"/carte",sep="")
     map <- read.table(file=file_path , header=T , dec = ".", na.strings = "-" , check.names=F)
     colnames(map) <- c("LG", "marqueur", "Distance","group_Americain","Posi_physique")
     rownames(map) <- map$marqueur
@@ -74,14 +74,14 @@ shinyServer(function(input, output) {
   
   # le fichier d'expression(si il existe)
   expre <- reactive({
-    file_path=paste("../",input$Experiment,"/expression",sep="")
+    file_path=paste(input$Experiment,"/expression",sep="")
     if (file.exists(file_path)) {
       expre<-read.table(file=file_path,header=T,dec=".")
     }
     
   })
 
-  
+
   # Print de la vérification
   output$verif <- renderPrint({
     Y=Y()
@@ -108,7 +108,7 @@ shinyServer(function(input, output) {
     }
       
     # Sélection de toutes les variables numériques
-    file_path=paste("../",input$Experiment,"/phenotypage.csv",sep="")
+    file_path=paste(input$Experiment,"/phenotypage.csv",sep="")
     Y=read.table(file = file_path , header = TRUE, sep = ";", dec = ".", na.strings = "NA")
     colnames(Y)[1]="geno"
     colnames <- names(Y[sapply(Y,is.numeric)==TRUE])
@@ -128,7 +128,7 @@ shinyServer(function(input, output) {
     }
       
     # Sélection de toutes les variables numériques
-    file_path=paste("../",input$Experiment,"/carte",sep="")
+    file_path=paste(input$Experiment,"/carte",sep="")
     map <- read.table(file=file_path , header=T , dec = ".", na.strings = "-" , check.names=F)
     colnames(map) <- c("LG", "marqueur", "Distance","group_Americain","Posi_physique")
     chromo_avail=levels(map$LG)
@@ -194,15 +194,16 @@ shinyServer(function(input, output) {
     data=merge(data,tmp,by.x=2 , by.y=1 , all.x=T)
     if (input$Distance == "physical"){ data$Distance <- data$Posi_physique  ; data=data[data$LG==data$group_physique , ]  }	
     data=data[order(data$Distance) , ]
-    my_text=paste(data$marqueur , "\n" , "Allele A : ",round(data$moy.A,2) , " | nb :", data$nb_A , "\nAllele B : ", round(data$moy.B,2) , " | nb :", data$nb_B , "\nMissing data : ", data$nb_NA , "\nr2 : ",  round(data$R2,2) , sep="" )    
+    my_text <- paste(data$marqueur , "\n" , "Allele A : ",round(data$moy.A,2) , " | nb :", data$nb_A , "\nAllele B : ", round(data$moy.B,2) , " | nb :", data$nb_B , "\nMissing data : ", data$nb_NA , "\nr2 : ",  round(data$R2,2) , sep="" )    
     print(head(data))
     output$chromo_zoom <- renderPlotly({ 
-    	plot_ly(data , y=LOD , x=Distance , group=variable , hoverinfo="name+text+x" , text=my_text) %>%  
-    	layout( 
-    		xaxis = list( title="" ) , 
-    		annotations = list(x = 10, y = 9, text = input$chromo, showarrow = F ,font=list(color="orange") ) 
-    		)   
-    	}) 
+    	plot_ly( type="scatter", mode="markers" ) %>%  
+				add_trace(data=data, y=~LOD , x=~Distance , split=~variable, hoverinfo='text+x', text=my_text) %>%
+				layout( 
+					xaxis = list( title="" ) , 
+					annotations = list(x = 10, y = 9, text = input$chromo, showarrow = F ,font=list(color="orange") ) 
+					)   
+				}) 
     
 
     
@@ -234,12 +235,12 @@ shinyServer(function(input, output) {
         res.PCA = PCA(don[ , c(2:(ncol(don)-2) ) ] , scale.unit=TRUE, ncp=3, graph=F) 
         AA=data.frame(ind=don[,1] , res.PCA$ind$coord)
         don=merge(don,AA , by.x=1 , by.y=1 , all.x=T)
-        plot_ly(don, x = Dim.1, y = Dim.2, text = don$text_for_PCA ,  mode = "markers" , group=my_allele , hoverinfo="text+x" , marker=list(size=rep(15,nrow(don))) )
+        plot_ly(data=don, x = ~Dim.1, y = ~Dim.2, text = don$text_for_PCA ,  mode = "markers" , split=~my_allele , hoverinfo='text' , marker=list(size=rep(15,nrow(don))) )
       }
       
       # Si je n ai que 2 variables, alors je fais juste un graph y~x
       else{
-        plot_ly(don , x=don[,2] , y=don[,3] , type="scatter" , mode="markers" , text = don$text_for_PCA , group=my_allele , hoverinfo="text+x" , marker=list(size=rep(15,nrow(don))) )  %>%  layout( yaxis=list(title=colnames(don)[3]) , xaxis = list(title=colnames(don)[2])  )
+        plot_ly(data=don , x=don[,2] , y=don[,3] , type="scatter" , mode="markers" , text = don$text_for_PCA , split=~my_allele , hoverinfo='text' , marker=list(size=rep(15,nrow(don))) )  %>%  layout( yaxis=list(title=colnames(don)[3]) , xaxis = list(title=colnames(don)[2])  )
       }
     })
     
@@ -329,7 +330,7 @@ shinyServer(function(input, output) {
         expression <- expression()
         expression$logpval=-log10(expression$pvalue)
         expression=expression[expression$logpval>1.5 , ]
-        plot_ly(expression, x=posi, y=logpval , text = nom_contig ,  mode = "markers" , hoverinfo="text+x" , marker=list(size=logpval*6 , color=logpval*2 )  )
+        plot_ly(data=expression, x=~posi, y=~logpval , text = nom_contig ,  mode = "markers" , hoverinfo="text" , marker=list(size=logpval*6 , color=logpval*2 ))
         #plot(expression$posi,-log10(expression$pvalue),xlab="distance physique",ylab="expression en -log10",main="gènes différentiellement exprimés en fonction de sa position physique")
     })
     
